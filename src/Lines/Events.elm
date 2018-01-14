@@ -1,32 +1,63 @@
-module Lines.Events exposing
-  ( Events, default, none, hover, click, custom
-  , Event, onClick, onMouseMove, onMouseUp, onMouseDown, onMouseLeave, on
-  , Handler, getSVG, getData, getNearest, getNearestX, getWithin, getWithinX
-  , map, map2, map3
-  )
+module Lines.Events
+    exposing
+        ( Event
+        , Events
+        , Handler
+        , click
+        , custom
+        , default
+        , getData
+        , getNearest
+        , getNearestBefore
+        , getNearestX
+        , getNearestXBefore
+        , getSVG
+        , getWithin
+        , getWithinX
+        , hover
+        , map
+        , map2
+        , map3
+        , none
+        , on
+        , onClick
+        , onMouseDown
+        , onMouseLeave
+        , onMouseMove
+        , onMouseUp
+        )
 
 {-|
 
+
 # Quick start
+
 @docs default, none
 
+
 # Configurations
+
 @docs Events, hover, click, custom
 
+
 ## Events
+
 @docs Event, onClick, onMouseMove, onMouseUp, onMouseDown, onMouseLeave, on
 
+
 ## Handlers
-@docs Handler, getSVG, getData, getNearest, getNearestX, getWithin, getWithinX
+
+@docs Handler, getSVG, getData, getNearest, getNearestX, getWithin, getWithinX, getNearestBefore, getNearestXBefore
+
 
 ### Maps
 
     events : Events.Events Data Msg
     events =
-      Events.custom
-        [ Events.onMouseMove Hover <|
-            Events.map2 (,) Events.getNearest Events.getSVG
-        ]
+        Events.custom
+            [ Events.onMouseMove Hover <|
+                Events.map2 (,) Events.getNearest Events.getSVG
+            ]
 
 @docs map, map2, map3
 
@@ -36,43 +67,42 @@ import Internal.Events as Events
 import Lines.Coordinate as Coordinate
 
 
-
 -- QUICK START
 
 
 {-| -}
 type alias Events data msg =
-  Events.Events data msg
+    Events.Events data msg
 
 
 {-| -}
 default : Events.Events data msg
 default =
-  Events.default
+    Events.default
 
 
 {-| -}
 none : Events.Events data msg
 none =
-  Events.none
+    Events.none
 
 
 {-| -}
 hover : (Maybe data -> msg) -> Events.Events data msg
 hover =
-  Events.hover
+    Events.hover
 
 
 {-| -}
 click : (Maybe data -> msg) -> Events.Events data msg
 click =
-  Events.click
+    Events.click
 
 
 {-| -}
 custom : List (Event data msg) -> Events data msg
 custom =
-  Events.custom
+    Events.custom
 
 
 
@@ -81,43 +111,43 @@ custom =
 
 {-| -}
 type alias Event data msg =
-  Events.Event data msg
+    Events.Event data msg
 
 
 {-| -}
 onClick : (a -> msg) -> Handler data a -> Event data msg
 onClick =
-  Events.onClick
+    Events.onClick
 
 
 {-| -}
 onMouseMove : (a -> msg) -> Handler data a -> Event data msg
 onMouseMove =
-  Events.onMouseMove
+    Events.onMouseMove
 
 
 {-| -}
 onMouseDown : (a -> msg) -> Handler data a -> Event data msg
 onMouseDown =
-  Events.onMouseDown
+    Events.onMouseDown
 
 
 {-| -}
 onMouseUp : (a -> msg) -> Handler data a -> Event data msg
 onMouseUp =
-  Events.onMouseUp
+    Events.onMouseUp
 
 
 {-| -}
 onMouseLeave : msg -> Event data msg
 onMouseLeave =
-  Events.onMouseLeave
+    Events.onMouseLeave
 
 
 {-| -}
 on : String -> (a -> msg) -> Handler data a -> Event data msg
 on =
-  Events.on
+    Events.on
 
 
 
@@ -129,25 +159,26 @@ This example gets you the nearest data coordinates to where you are hovering.
 
     events : Events.Events Data Msg
     events =
-      Events.custom
-        [ Events.onMouseMove Hover Events.getNearest ]
+        Events.custom
+            [ Events.onMouseMove Hover Events.getNearest ]
+
 -}
 type alias Handler data msg =
-  Events.Handler data msg
+    Events.Handler data msg
 
 
 {-| Get the SVG coordinates of the event.
 -}
 getSVG : Handler data Coordinate.Point
 getSVG =
-  Events.getSVG
+    Events.getSVG
 
 
 {-| Get the data coordinates of the event.
 -}
 getData : Handler data Coordinate.Point
 getData =
-  Events.getData
+    Events.getData
 
 
 {-| Get the data coordinates nearest to the event.
@@ -155,7 +186,19 @@ Returns `Nothing` if you have no data showing.
 -}
 getNearest : Handler data (Maybe data)
 getNearest =
-  Events.getNearest
+    Events.getNearest
+
+
+{-| -}
+getNearestBefore : Handler data (Maybe data)
+getNearestBefore =
+    Events.getNearestBefore
+
+
+{-| -}
+getNearestXBefore : Handler data (Maybe data)
+getNearestXBefore =
+    Events.getNearestXBefore
 
 
 {-| Get the data coordinates nearest of the event within the radius (in pixels)
@@ -163,14 +206,14 @@ you provide in the first argument. Returns `Nothing` if you have no data showing
 -}
 getWithin : Float -> Handler data (Maybe data)
 getWithin =
-  Events.getWithin
+    Events.getWithin
 
 
 {-| Get the data coordinates horizontally nearest to the event.
 -}
 getNearestX : Handler data (List data)
 getNearestX =
-  Events.getNearestX
+    Events.getNearestX
 
 
 {-| Finds the data coordinates horizontally nearest to the event, within the
@@ -178,7 +221,7 @@ distance (in pixels) you provide in the first argument.
 -}
 getWithinX : Float -> Handler data (List data)
 getWithinX =
-  Events.getWithinX
+    Events.getWithinX
 
 
 
@@ -188,16 +231,16 @@ getWithinX =
 {-| -}
 map : (a -> msg) -> Handler data a -> Handler data msg
 map =
-  Events.map
+    Events.map
 
 
 {-| -}
 map2 : (a -> b -> msg) -> Handler data a -> Handler data b -> Handler data msg
 map2 =
-  Events.map2
+    Events.map2
 
 
 {-| -}
 map3 : (a -> b -> c -> msg) -> Handler data a -> Handler data b -> Handler data c -> Handler data msg
 map3 =
-  Events.map3
+    Events.map3

@@ -1,0 +1,77 @@
+{
+  "id": "github.com/humio/community-dashboards/nginx/throughput",
+  "version": "2018-01-17T12:01:00Z",
+
+  "title": "Nginx Throughput",
+
+  "description": "A generic dashboard that shows the status of Nginx.",
+
+  "filters": [
+    { "title": "Test Env", "prefix": "@host = test*" },
+    { "title": "Production Env", "prefix": "@host = /production.*/" },
+    { "title": "Hide Errors", "prefix": "status_code > 400 and loglevel != /error/i" }
+  ],
+
+  "reservedColors": [
+    { "type": "regex", "pattern": "throughput.*", "ignoreCase": true, "color": "#0034FF" },
+    { "type": "regex", "pattern": "error", "ignoreCase": true, "color": "#FF0000" },
+    { "type": "string", "value": "protocol", "ignoreCase": true, "color": "#404040"  }
+  ],
+
+  "columns": 20,
+  "cellSize": 64,
+
+  "widgets": [
+    { "title": "Throughput",
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 5,
+      "type": "timeseries",
+      "yScale": "logarithmic",
+      "reservedColors": [],
+      "lines": [
+        { "type": "line", "source": "static", "width": 2, "color": "#000000", "opacity": 0.2, "axis": "y", "at": 1000.0, "label": "Danger" },
+        { "type": "band", "source": "static", "from": 3610022992, "to": 3601000212, "color": "#FF00FF", "opacity": 0.1, "axis": "x", "label": "Incident" }
+      ],
+      "query": "foo | bar | timechart()",
+      "live": true,
+      "duration": "24h",
+    },
+
+    { "title": "HTTP Methods",
+      "x": 0,
+      "y": 7,
+      "width": 6,
+      "height": 6,
+      "type": "pie",
+      "reservedColors": [
+        { "type": "string", "value": "HEAD", "ignoreCase": false, "color": "#FF00FF" },
+        { "type": "string", "value": "GET", "ignoreCase": false, "color": "#00FF00" }
+      ],
+      "lines": [
+        { "type": "line", "source": "static", "width": 2, "color": "#000000", "opacity": 0.2, "axis": "y", "at": 1000.0, "label": "Danger" },
+        { "type": "band", "source": "static", "from": 3610022992, "to": 3601000212, "color": "#FF00FF", "opacity": 0.1, "axis": "x", "label": "Incident" }
+      ],
+      "query": "groupby(http_method)",
+      "live": true,
+      "duration": "4d",
+    },
+
+    { "title": "Map of Stockholm",
+      "x": 4,
+      "y": 0,
+      "width": 6,
+      "height": 5,
+      "type": "iframe",
+      "url": "https://www.google.se/maps/@59.4177498,17.9697381,15z"
+    },
+
+    { "title": "Description",
+      "type": "text",
+      "text": "Hello World",
+      "color": "#FF0000",
+      "fontSize": 30
+    }
+  ]
+}
