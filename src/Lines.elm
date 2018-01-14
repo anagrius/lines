@@ -1,76 +1,90 @@
-module Lines exposing
-  ( view1, view2, view3
-  , view, Line, line, dash
-  , viewCustom, Config
-  , Interpolation, linear, monotone, steppedBefore, steppedAfter
-  )
+module Lines
+    exposing
+        ( Config
+        , Interpolation
+        , Line
+        , dash
+        , line
+        , linear
+        , monotone
+        , steppedAfter
+        , steppedBefore
+        , view
+        , view1
+        , view2
+        , view3
+        , viewCustom
+        )
 
 {-|
 
+
 # Quick start
+
 @docs view1, view2, view3
 
+
 # Customizing lines
+
 @docs view, Line, line, dash
 
+
 # Customizing everything
+
 @docs viewCustom, Config
 
+
 ## Interpolations
+
 @docs Interpolation, linear, monotone, steppedBefore, steppedAfter
 
 -}
 
 import Html
-import Svg
-import Svg.Attributes as Attributes
-import Lines.Color as Color
-import Lines.Junk as Junk
-import Lines.Dimension as Dimension
 import Internal.Area as Area
 import Internal.Axis as Axis
 import Internal.Axis.Intersection as Intersection
 import Internal.Axis.Range as Range
 import Internal.Coordinate as Coordinate
 import Internal.Dot as Dot
-import Internal.Grid as Grid
 import Internal.Events as Events
+import Internal.Grid as Grid
 import Internal.Interpolation as Interpolation
 import Internal.Junk
 import Internal.Legends as Legends
 import Internal.Line as Line
 import Internal.Utils as Utils
+import Lines.Color as Color
+import Lines.Dimension as Dimension
+import Lines.Junk as Junk
+import Svg
+import Svg.Attributes as Attributes
+
 
 -- TODO broken data
 -- TODO Should handlers be decoders?
 -- TODO more default junk (hovers)
 -- TODO move tick groups to axis
 -- TODO more default dimensions
-
 -- TODO http://package.elm-lang.org/packages/eskimoblood/elm-color-extra/5.0.0/Color-Convert
 -- TODO consider tick space tolerance as determinating factor of tick amount
 -- TODO Add range adjust for nice ticks?
 -- TODO Should all configs in modules be called Config?
-
-
-
 -- VIEW / SIMPLE
 
 
-{-|
-
-** Show a line chart **
+{-| ** Show a line chart **
 
     type alias Point =
-      { x : Float, y : Float }
+        { x : Float, y : Float }
 
     chart : Html msg
     chart =
-      Lines.view1 .x .y
-        [ Point 0 2, Point 5 5, Point 10 10 ]
+        Lines.view1 .x
+            .y
+            [ Point 0 2, Point 5 5, Point 10 10 ]
 
 _See the full example [here](https://ellie-app.com/s5M4fxFwGa1/0)._
-
 
 ** Choosing your variables **
 
@@ -80,24 +94,23 @@ So if we had more complex data structures, like a human with an `age`, `weight`,
 
     aliceChart : Html msg
     aliceChart =
-      Lines.view1 .age .weight
-        [ Human  4 24 0.94 0
-        , Human 25 75 1.73 25000
-        , Human 43 83 1.75 40000
-        ]
+        Lines.view1 .age
+            .weight
+            [ Human 4 24 0.94 0
+            , Human 25 75 1.73 25000
+            , Human 43 83 1.75 40000
+            ]
+
 
     -- Try changing .weight to .height
 
-
 _See the full example [here](https://ellie-app.com/s8kQfLfYZa1/1)._
-
 
 ** Use any function as the variable **
 
 Rather than using data like `.weight` directly, you can make a
 function like `bmi human = human.weight / human.height ^ 2` and create a
 chart of `.age` vs `bmi`. This allows you to keep your data set nice and minimal!
-
 
 ** The whole chart is just a function **
 
@@ -108,66 +121,62 @@ refreshes automatically!
 -}
 view1 : (data -> Float) -> (data -> Float) -> List data -> Svg.Svg msg
 view1 toX toY dataset =
-  view toX toY <| defaultLines [ dataset ]
+    view toX toY <| defaultLines [ dataset ]
 
 
-{-|
-
-** Show a line chart with two lines **
+{-| ** Show a line chart with two lines **
 
 Say you have two humans and you would like to see how their weight relates
 to their age. Here's how you could plot it.
 
     humanChart : Html msg
     humanChart =
-      Lines.view2 .age .weight alice chuck
+        Lines.view2 .age .weight alice chuck
 
 _See the full example [here](https://ellie-app.com/scTM9Mw77a1/0)._
 
 -}
 view2 : (data -> Float) -> (data -> Float) -> List data -> List data -> Svg.Svg msg
 view2 toX toY dataset1 dataset2 =
-  view toX toY <| defaultLines [ dataset1, dataset2 ]
+    view toX toY <| defaultLines [ dataset1, dataset2 ]
 
 
-{-|
-
-** Show a line chart with three lines **
+{-| ** Show a line chart with three lines **
 
 It works just like `view1` and `view2`.
 
     humanChart : Html msg
     humanChart =
-      Lines.view3 .age .weight alice bob chuck
+        Lines.view3 .age .weight alice bob chuck
 
 _See the full example [here](https://ellie-app.com/sdNHxCfrJa1/0)._
 
 But what if you have more people? What if you have _four_ people?! In that case,
 check out `view`.
+
 -}
 view3 : (data -> Float) -> (data -> Float) -> List data -> List data -> List data -> Svg.Svg msg
 view3 toX toY dataset1 dataset2 dataset3 =
-  view toX toY <| defaultLines [ dataset1, dataset2, dataset3 ]
+    view toX toY <| defaultLines [ dataset1, dataset2, dataset3 ]
 
 
 
 -- VIEW
 
 
-{-|
-
-** Show any amount of lines **
+{-| ** Show any amount of lines **
 
 Try changing the color, the dot, or the title of a line, or see
 the `line` function for more information.
 
     humanChart : Html msg
     humanChart =
-      Lines.view .age .weight
-        [ Lines.line "red" Dot.cross "Alice" alice
-        , Lines.line "blue" Dot.square "Bob" bob
-        , Lines.line "green" Dot.circle "Chuck" chuck
-        ]
+        Lines.view .age
+            .weight
+            [ Lines.line "red" Dot.cross "Alice" alice
+            , Lines.line "blue" Dot.square "Bob" bob
+            , Lines.line "green" Dot.circle "Chuck" chuck
+            ]
 
 _See the full example [here](https://ellie-app.com/sgL9mdF7ra1/1)._
 
@@ -176,30 +185,28 @@ See `viewCustom` for all other customizations.
 -}
 view : (data -> Float) -> (data -> Float) -> List (Line data) -> Svg.Svg msg
 view toX toY =
-  viewCustom (defaultConfig toX toY)
+    viewCustom (defaultConfig toX toY)
 
 
 {-| -}
 type alias Line data =
-  Line.Line data
+    Line.Line data
 
 
-{-|
-
-** Customize a solid line **
+{-| ** Customize a solid line **
 
 Try changing the color or explore all the available dot shapes from `Lines.Dot`!
 
     humanChart : Html msg
     humanChart =
-      Lines.view .age .weight
-        [ Lines.line "darkslateblue" Dot.cross "Alice" alice
-        , Lines.line "darkturquoise" Dot.diamond "Bob" bob
-        , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
-        ]
+        Lines.view .age
+            .weight
+            [ Lines.line "darkslateblue" Dot.cross "Alice" alice
+            , Lines.line "darkturquoise" Dot.diamond "Bob" bob
+            , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
+            ]
 
 _See the full example [here](https://ellie-app.com/stWdWjqGZa1/0)._
-
 
 ** Regarding the title **
 
@@ -208,15 +215,13 @@ customizing your legends, dot size or line width, check out `viewCustom`.
 For now though, I'd recommend you stick to `view` and get your lines and
 data right first, and then stepping up the complexity.
 
- -}
+-}
 line : Color.Color -> Dot.Shape -> String -> List data -> Line data
 line =
-  Line.line
+    Line.line
 
 
-{-|
-
-** Customize a dashed line **
+{-| ** Customize a dashed line **
 
 Works just like `line`, except it takes another argument which is an array of
 floats describing your dashing pattern. I'd recommend just typing in
@@ -226,12 +231,14 @@ for examples of patterns.
 
     humanChart : Html msg
     humanChart =
-      Lines.view .age .weight
-        [ Lines.dash "rebeccapurple" Dot.none "Average" [ 2, 4 ] average
-        , Lines.line "darkslateblue" Dot.cross "Alice" alice
-        , Lines.line "darkturquoise" Dot.diamond "Bob" bob
-        , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
-        ]
+        Lines.view .age
+            .weight
+            [ Lines.dash "rebeccapurple" Dot.none "Average" [ 2, 4 ] average
+            , Lines.line "darkslateblue" Dot.cross "Alice" alice
+            , Lines.line "darkturquoise" Dot.diamond "Bob" bob
+            , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
+            ]
+
 
     -- Try passing different numbers!
 
@@ -245,16 +252,14 @@ averages or predicted values.
 -}
 dash : Color.Color -> Dot.Shape -> String -> List Float -> List data -> Line data
 dash =
-  Line.dash
+    Line.dash
 
 
 
 -- VIEW / CUSTOM
 
 
-{-|
-
-** Available customizations **
+{-| ** Available customizations **
 
 Use with `viewCustom`.
 
@@ -306,7 +311,6 @@ Use with `viewCustom`.
     SVG or HTML fun you can imagine.
     See `Lines.Junk` for more information and examples.
 
-
 ** Example configuration **
 
 A good start would be to copy it and play around with customizations
@@ -314,41 +318,41 @@ available for each property.
 
     chartConfig : Config Info msg
     chartConfig =
-      { id = "chart"
-      , margin = Coordinate.Margin 30 120 90 120
-      , x = Dimension.default 650 "Age (years)" .age
-      , y = Dimension.default 400 "Weight (kg)" .weight
-      , grid = Grid.default
-      , areaOpacity = 0
-      , intersection = Intersection.default
-      , interpolation = Lines.linear
-      , line = Line.default
-      , dot = Dot.default
-      , legends = Legends.default
-      , attributes = []
-      , events = []
-      , junk = Junk.none
-      }
+        { id = "chart"
+        , margin = Coordinate.Margin 30 120 90 120
+        , x = Dimension.default 650 "Age (years)" .age
+        , y = Dimension.default 400 "Weight (kg)" .weight
+        , grid = Grid.default
+        , areaOpacity = 0
+        , intersection = Intersection.default
+        , interpolation = Lines.linear
+        , line = Line.default
+        , dot = Dot.default
+        , legends = Legends.default
+        , attributes = []
+        , events = []
+        , junk = Junk.none
+        }
 
 _See the full example [here](https://ellie-app.com/smkVxrpMfa1/2)._
 
 -}
 type alias Config data msg =
-  { id : String
-  , margin : Coordinate.Margin
-  , x : Dimension.Dimension data msg
-  , y : Dimension.Dimension data msg
-  , grid : Grid.Grid
-  , intersection : Intersection.Intersection
-  , interpolation : Interpolation
-  , area : Area.Area
-  , line : Line.Look data
-  , dot : Dot.Look data
-  , legends : Legends.Legends msg
-  , attributes : List (Svg.Attribute msg)
-  , events : Events.Events data msg
-  , junk : Junk.Junk msg
-  }
+    { id : String
+    , margin : Coordinate.Margin
+    , x : Dimension.Dimension data msg
+    , y : Dimension.Dimension data msg
+    , grid : Grid.Grid
+    , intersection : Intersection.Intersection
+    , interpolation : Interpolation
+    , area : Area.Area
+    , line : Line.Look data
+    , dot : Dot.Look data
+    , legends : Legends.Legends msg
+    , attributes : List (Svg.Attribute msg)
+    , events : Events.Events data msg
+    , junk : Junk.Junk msg
+    }
 
 
 
@@ -357,39 +361,38 @@ type alias Config data msg =
 
 {-| -}
 type alias Interpolation =
-  Interpolation.Interpolation
+    Interpolation.Interpolation
 
 
 {-| A linear interpolation.
 -}
 linear : Interpolation
 linear =
-  Interpolation.Linear
+    Interpolation.Linear
 
 
 {-| A monotone-x interpolation.
 -}
 monotone : Interpolation
 monotone =
-  Interpolation.Monotone
+    Interpolation.Monotone
+
 
 {-| A stepped interpolation where the step comes before the point.
 -}
 steppedBefore : Interpolation
 steppedBefore =
-  Interpolation.SteppedBefore
+    Interpolation.SteppedBefore
 
 
 {-| A stepped interpolation where the step comes after the point.
 -}
 steppedAfter : Interpolation
 steppedAfter =
-  Interpolation.SteppedAfter
+    Interpolation.SteppedAfter
 
 
-{-|
-
-** Customize everything **
+{-| ** Customize everything **
 
 See the `Config` type for information about the available customizations
 ... or copy the example below if you're lazy. No one will tell.
@@ -400,33 +403,31 @@ The example below adds color to the area below the lines.
 
     chart : Html msg
     chart =
-      Lines.viewCustom chartConfig
-        [ Lines.line "darkslateblue" Dot.cross "Alice" alice
-        , Lines.line "darkturquoise" Dot.diamond "Bob" bob
-        , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
-        ]
+        Lines.viewCustom chartConfig
+            [ Lines.line "darkslateblue" Dot.cross "Alice" alice
+            , Lines.line "darkturquoise" Dot.diamond "Bob" bob
+            , Lines.line "darkgoldenrod" Dot.triangle "Chuck" chuck
+            ]
 
     chartConfig : Config Info msg
     chartConfig =
-      { id = "chart"
-      , margin = Coordinate.Margin 30 120 90 120
-      , x = Dimension.default 650 "Age (years)" .age
-      , y = Dimension.default 400 "Weight (kg)" .weight
-      , grid = Grid.default
-      , areaOpacity = 0.25 -- Changed from the default!
-      , intersection = Intersection.default
-      , interpolation = Lines.linear
-      , line = Line.default
-      , dot = Dot.default
-      , legends = Legends.default
-      , attributes = []
-      , events = []
-      , junk = Junk.none
-      }
-
+        { id = "chart"
+        , margin = Coordinate.Margin 30 120 90 120
+        , x = Dimension.default 650 "Age (years)" .age
+        , y = Dimension.default 400 "Weight (kg)" .weight
+        , grid = Grid.default
+        , areaOpacity = 0.25 -- Changed from the default!
+        , intersection = Intersection.default
+        , interpolation = Lines.linear
+        , line = Line.default
+        , dot = Dot.default
+        , legends = Legends.default
+        , attributes = []
+        , events = []
+        , junk = Junk.none
+        }
 
 _See the full example [here](https://ellie-app.com/smkVxrpMfa1/2)._
-
 
 ** Speaking of area charts **
 
@@ -439,68 +440,71 @@ significant, it's best to leave it out.
 -}
 viewCustom : Config data msg -> List (Line data) -> Svg.Svg msg
 viewCustom config lines =
-  let
-    -- Data points
-    dataPoints = toDataPoints config lines
-    safeDataPoints = List.filterMap identity <| List.concat dataPoints
+    let
+        -- Data points
+        dataPoints =
+            toDataPoints config lines
 
-    -- System
-    system =
-      toSystem config safeDataPoints
+        safeDataPoints =
+            List.filterMap identity <| List.concat dataPoints
 
-    -- View
-    junk =
-      Internal.Junk.getLayers system internalJunk config.junk
+        -- System
+        system =
+            toSystem config safeDataPoints
 
-    internalJunk =
-      { below = Grid.view system config.x config.y config.grid
-      , above = []
-      , html = []
-      }
+        -- View
+        junk =
+            Internal.Junk.getLayers system internalJunk config.junk
 
-    container plot =
-      Html.div [] (plot :: junk.html)
+        internalJunk =
+            { below = Grid.view system config.x config.y config.grid
+            , above = []
+            , html = []
+            }
 
-    attributes =
-      List.concat
-        [ config.attributes
-        , Events.toAttributes safeDataPoints system config.events
-        , [ Attributes.width <| toString system.frame.size.width
-          , Attributes.height <| toString system.frame.size.height
-          ]
-        ]
+        container plot =
+            Html.div [] (plot :: junk.html)
 
-    viewLines =
-      Line.view
-        { system = system
-        , dotLook = config.dot
-        , lineLook = config.line
-        , interpolation = config.interpolation
-        , area = config.area
-        , id = config.id
-        }
+        attributes =
+            List.concat
+                [ config.attributes
+                , Events.toAttributes safeDataPoints system config.events
+                , [ Attributes.width <| toString system.frame.size.width
+                  , Attributes.height <| toString system.frame.size.height
+                  ]
+                ]
 
-    viewLegends =
-      Legends.view
-        { system = system
-        , dotLook = config.dot
-        , lineLook = config.line
-        , area = config.area
-        , lines = lines
-        , dataPoints = dataPoints
-        , legends = config.legends
-        }
-  in
-  container <|
-    Svg.svg attributes
-      [ Svg.defs [] [ chartArea config system ]
-      , Svg.g [ Attributes.class "chart__junk--below" ] junk.below
-      , viewLines lines dataPoints
-      , Axis.viewHorizontal system config.intersection config.x.title config.x.axis
-      , Axis.viewVertical   system config.intersection config.y.title config.y.axis
-      , viewLegends
-      , Svg.g [ Attributes.class "chart__junk--above" ] junk.above
-      ]
+        viewLines =
+            Line.view
+                { system = system
+                , dotLook = config.dot
+                , lineLook = config.line
+                , interpolation = config.interpolation
+                , area = config.area
+                , id = config.id
+                }
+
+        viewLegends =
+            Legends.view
+                { system = system
+                , dotLook = config.dot
+                , lineLook = config.line
+                , area = config.area
+                , lines = lines
+                , dataPoints = dataPoints
+                , legends = config.legends
+                }
+    in
+    container <|
+        Svg.svg attributes
+            [ Svg.defs [] [ chartArea config system ]
+            , Svg.g [ Attributes.class "chart__junk--below" ] junk.below
+            , viewLines lines dataPoints
+            , Axis.viewHorizontal system config.intersection config.x.title config.x.axis
+            , Axis.viewVertical system config.intersection config.y.title config.y.axis
+            , viewLegends
+            , Svg.g [ Attributes.class "chart__junk--above" ] junk.above
+            ]
 
 
 
@@ -509,109 +513,134 @@ viewCustom config lines =
 
 chartArea : Config data msg -> Coordinate.System -> Svg.Svg msg
 chartArea { id } system =
-  Svg.clipPath [ Attributes.id (Utils.toChartAreaId id) ]
-    [ Svg.rect
-      [ Attributes.x <| toString system.frame.margin.right
-      , Attributes.y <| toString system.frame.margin.top
-      , Attributes.width <| toString (Coordinate.lengthX system)
-      , Attributes.height <| toString (Coordinate.lengthY system)
-      ]
-      []
-    ]
+    Svg.clipPath [ Attributes.id (Utils.toChartAreaId id) ]
+        [ Svg.rect
+            [ Attributes.x <| toString system.frame.margin.right
+            , Attributes.y <| toString system.frame.margin.top
+            , Attributes.width <| toString (Coordinate.lengthX system)
+            , Attributes.height <| toString (Coordinate.lengthY system)
+            ]
+            []
+        ]
 
 
 toDataPoints : Config data msg -> List (Line data) -> List (Coordinate.Data data)
 toDataPoints config lines =
-  let
-    x = config.x.variable
-    y = config.y.variable
+    let
+        x =
+            config.x.variable
 
-    dataPoints =
-      List.map (Line.lineConfig >> .data >> List.map maybeDataPoint) lines
+        y =
+            config.y.variable
 
-    maybeDataPoint datum =
-      Maybe.map2 (dataPoint datum) (x datum) (y datum)
+        dataPoints =
+            List.map (Line.lineConfig >> .data >> List.map maybeDataPoint) lines
 
-    dataPoint datum x y =
-      Coordinate.DataPoint datum (Coordinate.Point x y)
-  in
-  case config.area of
-    Area.None         -> dataPoints
-    Area.Normal _     -> dataPoints
-    Area.Stacked _    -> stack dataPoints
-    Area.Percentage _ -> normalize (stack dataPoints)
+        maybeDataPoint datum =
+            Maybe.map2 (dataPoint datum) (x datum) (y datum)
+
+        dataPoint datum x y =
+            Coordinate.DataPoint datum (Coordinate.Point x y)
+    in
+    case config.area of
+        Area.None ->
+            dataPoints
+
+        Area.Normal _ ->
+            dataPoints
+
+        Area.Stacked _ ->
+            stack dataPoints
+
+        Area.Percentage _ ->
+            normalize (stack dataPoints)
 
 
 stack : List (Coordinate.Data data) -> List (Coordinate.Data data)
 stack dataset =
-  let
-    stackBelows dataset result =
-      case dataset of
-        data :: belows ->
-          stackBelows belows <|
-            List.foldl (List.map2 addSafe) data belows :: result
+    let
+        stackBelows dataset result =
+            case dataset of
+                data :: belows ->
+                    stackBelows belows <|
+                        List.foldl (List.map2 addSafe) data belows
+                            :: result
 
-        [] ->
-          result
+                [] ->
+                    result
 
-    addSafe datum datumBelow =
-      Maybe.map2 add datum datumBelow
+        addSafe datum datumBelow =
+            let
+                yBelow =
+                    Maybe.map (.point >> .y) datumBelow |> Maybe.withDefault 0
+            in
+            Maybe.map (add yBelow) datum
 
-    add datum datumBelow =
-      setY datum <| datum.point.y + datumBelow.point.y
-  in
-  List.reverse (stackBelows dataset [])
+        add yBelow datum =
+            setY datum <| datum.point.y + yBelow
+    in
+    List.reverse (stackBelows dataset [])
 
 
 normalize : List (Coordinate.Data data) -> List (Coordinate.Data data)
 normalize dataset =
-  case dataset of
-    highest :: belows ->
-      let
-        toPercentageSafe datum datumBelow =
-          Maybe.map2 toPercentage datum datumBelow
+    case dataset of
+        highest :: belows ->
+            let
+                toPercentageSafe datum datumBelow =
+                    Maybe.map2 toPercentage datum datumBelow
 
-        toPercentage highest datum =
-          setY datum (100 * datum.point.y / highest.point.y)
-      in
-      List.map (List.map2 toPercentageSafe highest) (highest :: belows)
+                toPercentage highest datum =
+                    setY datum (100 * datum.point.y / highest.point.y)
+            in
+            List.map (List.map2 toPercentageSafe highest) (highest :: belows)
 
-    [] ->
-      dataset
+        [] ->
+            dataset
 
 
 setY : Coordinate.DataPoint data -> Float -> Coordinate.DataPoint data
 setY datum y =
-  Coordinate.DataPoint datum.data (Coordinate.Point datum.point.x y)
+    Coordinate.DataPoint datum.data (Coordinate.Point datum.point.x y)
 
 
 toSystem : Config data msg -> List (Coordinate.DataPoint data) -> Coordinate.System
 toSystem config data =
-  let
-    hasArea = Area.hasArea config.area
-    size   = Coordinate.Size (toFloat config.x.pixels) (toFloat config.y.pixels)
-    frame  = Coordinate.Frame config.margin size
-    xRange = Coordinate.range (.point >> .x) data
-    yRange = Coordinate.range (.point >> .y) data
+    let
+        hasArea =
+            Area.hasArea config.area
 
-    system =
-      { frame = frame
-      , x = xRange
-      , y = adjustDomainRange yRange
-      , xData = xRange
-      , yData = yRange
-      , id = config.id
-      }
+        size =
+            Coordinate.Size (toFloat config.x.pixels) (toFloat config.y.pixels)
 
-    adjustDomainRange domain =
-      if hasArea
-        then Coordinate.ground domain
-        else domain
-  in
-  { system
-  | x = Range.applyX config.x.range system
-  , y = Range.applyY config.y.range system
-  }
+        frame =
+            Coordinate.Frame config.margin size
+
+        xRange =
+            Coordinate.range (.point >> .x) data
+
+        yRange =
+            Coordinate.range (.point >> .y) data
+
+        system =
+            { frame = frame
+            , x = xRange
+            , y = adjustDomainRange yRange
+            , xData = xRange
+            , yData = yRange
+            , id = config.id
+            }
+
+        adjustDomainRange domain =
+            if hasArea then
+                Coordinate.ground domain
+            else
+                domain
+    in
+    { system
+        | x = Range.applyX config.x.range system
+        , y = Range.applyY config.y.range system
+    }
 
 
 
@@ -620,47 +649,47 @@ toSystem config data =
 
 defaultConfig : (data -> Float) -> (data -> Float) -> Config data msg
 defaultConfig toX toY =
-  { id = "chart"
-  , margin = Coordinate.Margin 30 120 90 120
-  , x = Dimension.default 650 "" toX
-  , y = Dimension.default 400 "" toY
-  , grid = Grid.default
-  , area = Area.none
-  , intersection = Intersection.default
-  , interpolation = linear
-  , line = Line.default
-  , dot = Dot.default
-  , legends = Legends.default
-  , attributes = [ Attributes.style "font-family: monospace;" ] -- TODO: Maybe remove
-  , events = Events.default
-  , junk = Junk.none
-  }
+    { id = "chart"
+    , margin = Coordinate.Margin 30 120 90 120
+    , x = Dimension.default 650 "" toX
+    , y = Dimension.default 400 "" toY
+    , grid = Grid.default
+    , area = Area.none
+    , intersection = Intersection.default
+    , interpolation = linear
+    , line = Line.default
+    , dot = Dot.default
+    , legends = Legends.default
+    , attributes = [ Attributes.style "font-family: monospace;" ] -- TODO: Maybe remove
+    , events = Events.default
+    , junk = Junk.none
+    }
 
 
 defaultLines : List (List data) -> List (Line data)
 defaultLines =
-  List.map4 Line.line defaultColors defaultShapes defaultLabel
+    List.map4 Line.line defaultColors defaultShapes defaultLabel
 
 
 defaultColors : List Color.Color
 defaultColors =
-  [ Color.pink
-  , Color.blue
-  , Color.orange
-  ]
+    [ Color.pink
+    , Color.blue
+    , Color.orange
+    ]
 
 
 defaultShapes : List Dot.Shape
 defaultShapes =
-  [ Dot.Circle
-  , Dot.Triangle
-  , Dot.Cross
-  ]
+    [ Dot.Circle
+    , Dot.Triangle
+    , Dot.Cross
+    ]
 
 
 defaultLabel : List String
 defaultLabel =
-  [ "Series 1"
-  , "Series 2"
-  , "Series 3"
-  ]
+    [ "Series 1"
+    , "Series 2"
+    , "Series 3"
+    ]

@@ -78,16 +78,14 @@ init =
     }
 
 
+flatmap : (x -> Maybe y) -> Maybe x -> Maybe y
+flatmap f x =
+    case x of
+        Just x ->
+            f x
 
---
--- flatmap : (x -> Maybe y) -> Maybe x -> Maybe y
--- flatmap f x =
---     case x of
---         Just x ->
---             f x
---
---         Nothing ->
---             Nothing
+        Nothing ->
+            Nothing
 
 
 when : Bool -> (() -> Maybe a) -> Maybe a
@@ -108,8 +106,51 @@ whenEmpty maybe f =
     when (maybe == Nothing) f
 
 
-theJunk : Model -> Chart -> String -> Junk.Junk msg
-theJunk { hoveredId, selectionState, line, hoveredPoint } { bucketSize } currentId =
+indexOf : x -> List x -> Maybe Int
+indexOf x xs =
+    let
+        find i vals =
+            case vals of
+                [] ->
+                    Nothing
+
+                y :: rest ->
+                    if y == x then
+                        Just i
+                    else
+                        find (i + 1) rest
+    in
+    find 0 xs
+
+
+type alias Legend =
+    List
+        { title : String
+        , value : Maybe Float
+        , color : String
+        }
+
+
+theJunk : Model -> Chart -> String -> List Series -> Junk.Junk msg
+theJunk { hoveredId, selectionState, line, hoveredPoint } { bucketSize, xs } currentId series =
+    let
+        legend : Maybe Legend
+        legend =
+            case flatmap (\x -> indexOf x xs) hoveredPoint of
+                Just i ->
+                    Just <|
+                        List.map
+                            (\s ->
+                                { title = s.title
+                                , value = s.ys |> List.drop i |> List.head |> flatten
+                                , color = s.color
+                                }
+                            )
+                            series
+
+                Nothing ->
+                    Nothing
+    in
     Junk.custom <|
         \system ->
             { below = []
@@ -123,7 +164,7 @@ theJunk { hoveredId, selectionState, line, hoveredPoint } { bucketSize } current
             , html =
                 List.filterMap identity
                     [ when (contains currentId hoveredId && selectionState == Nothing) <|
-                        \_ -> Maybe.map (tooltip system bucketSize) hoveredPoint
+                        \_ -> Maybe.map2 (tooltip system bucketSize) legend hoveredPoint
                     ]
             }
 
@@ -133,17 +174,41 @@ px v =
     toString v ++ "px"
 
 
-tooltip : Coordinate.System -> Int -> Float -> Html msg
-tooltip system bucketSize x =
+tooltip : Coordinate.System -> Int -> Legend -> Float -> Html msg
+tooltip system bucketSize legend x =
     let
         w =
             200
 
+        itemHeight =
+            14
+
+        count =
+            List.length legend
+
+        padding =
+            8
+
+        hGap =
+            6
+
         h =
-            60
+            toFloat <| count * itemHeight + (count - 1) * hGap + 2 * padding
 
         gap =
             10 + Coordinate.scaleSVGX system (toFloat bucketSize)
+
+        viewItem { title, value, color } =
+            [ Html.span
+                [ class "chart__tooltip-item-title"
+                , Html.Attributes.style
+                    [ ( "height", px itemHeight )
+                    , ( "color", color )
+                    ]
+                ]
+                [ Html.text title ]
+            , Html.span [ class "chart__tooltip-item-value" ] [ Html.text (Maybe.withDefault "N/A" (Maybe.map toString value)) ]
+            ]
     in
     div
         [ class "chart__tooltip"
@@ -155,7 +220,7 @@ tooltip system bucketSize x =
             , ( "top", px <| (system.frame.size.height - system.frame.margin.top - system.frame.margin.bottom) / 2 - h / 2 + system.frame.margin.top )
             ]
         ]
-        [ Html.text <| "Hello " ++ px system.frame.size.height ]
+        (List.concatMap viewItem legend)
 
 
 update : Msg -> Model -> Model
@@ -259,6 +324,14 @@ cellSize =
     100
 
 
+gapSize =
+    16
+
+
+headerHeight =
+    22
+
+
 view : Model -> Html Msg
 view model =
     div []
@@ -269,7 +342,7 @@ view model =
   display: grid;
   grid-template-columns: repeat(12, """ ++ toString cellSize ++ """px);
   grid-auto-rows: """ ++ toString cellSize ++ """px;
-  grid-gap: 16px;
+  grid-gap: """ ++ toString gapSize ++ """px;
   width: 100%;
   padding: 16px;
 }
@@ -303,6 +376,13 @@ view model =
   border-radius: 4px;
   padding: 8px 16px;
   box-sizing: border-box;
+  display: grid;
+  grid-gap: 6px;
+  grid-template-columns: auto auto;
+}
+
+.chart__tooltip-item {
+  display: contents;
 }
 """ ]
         , div
@@ -317,9 +397,19 @@ view model =
         ]
 
 
+flatten : Maybe (Maybe a) -> Maybe a
+flatten maybe =
+    Maybe.withDefault Nothing maybe
+
+
 now : number
 now =
     1515878745894
+
+
+widgetPadding : number
+widgetPadding =
+    8
 
 
 chart1 : Chart
@@ -332,11 +422,11 @@ chart1 =
     , yLabel = Just "Eggs"
     , bucketSize = bucketSize
     , series =
-        [ { title = "Agda", ys = List.map Just [ 0, 1, 3, 5, 7, 1, 2, 1, 2 ] }
-        , { title = "Marie", ys = List.map Just [ 1, 0, 0, 2, 1, 1, 2, 1, 2 ] }
-        , { title = "Sofie", ys = List.map Just [ 0, 0, 0, 1, 1, 1, 0, 0, 0 ] }
+        [ { title = "Agda", color = color1, ys = List.map Just [ 0, 1, 3, 5, 7, 1, 2, 1, 2, 2 ] }
+        , { title = "Marie", color = color2, ys = List.map Just [ 1, 0, 0, 2, 1, 1, 2, 1, 2, 2 ] }
+        , { title = "Sofie", color = color3, ys = List.map Just [ 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 ] }
         ]
-    , xs = List.range 0 8 |> List.map (\i -> toFloat <| now + bucketSize * i)
+    , xs = List.range 0 9 |> List.map (\i -> toFloat <| now + bucketSize * i)
     , title = "Chickens"
     , id = "chickens"
     }
@@ -352,11 +442,11 @@ chart2 =
     , yLabel = Just "Mean"
     , bucketSize = bucketSize
     , series =
-        [ { title = "@anagrius", ys = [ Just 0, Just 1, Just 0, Just 10, Just 10, Just 5, Just 5, Just 0, Just 0 ] }
-        , { title = "@meethumio", ys = [ Just 19, Just 0, Just 0, Nothing, Nothing, Just 10, Just 2, Just 16, Just 2 ] }
-        , { title = "@therealdonaldtrump", ys = [ Nothing, Just 21, Just 211, Nothing, Just 160, Nothing, Nothing, Just 101, Just 171 ] }
+        [ { title = "@therealdonaldtrump", color = color1, ys = [ Just 1, Just 21, Just 211, Just 121, Just 0, Just 1, Just 1, Just 101, Just 171, Just 171 ] }
+        , { title = "@anagrius", color = color2, ys = [ Just 0, Just 10, Just 0, Just 10, Just 120, Just 5, Just 5, Just 0, Just 70, Just 70 ] }
+        , { title = "@meethumio", color = color3, ys = [ Just 19, Just 0, Just 0, Just 100, Just 0, Just 0, Just 2, Just 16, Just 2, Just 2 ] }
         ]
-    , xs = List.range 0 8 |> List.map (\i -> toFloat <| now - bucketSize * 3 + bucketSize * i)
+    , xs = List.range 0 9 |> List.map (\i -> toFloat <| now - bucketSize * 3 + bucketSize * i)
     , title = "Tweets"
     , id = "tweets"
     }
@@ -365,6 +455,7 @@ chart2 =
 type alias Series =
     { title : String
     , ys : List (Maybe Float)
+    , color : String
     }
 
 
@@ -431,16 +522,16 @@ viewChart model chart =
     in
     div
         [ Attributes.class "dashboard__widget"
-        , Attributes.style "grid-column-start: span 6; grid-row-start: span 4;"
+        , Attributes.style "grid-column-start: span 6; grid-row-start: span 3;"
         , HtmlEvents.onWithOptions "mousedown" { preventDefault = True, stopPropagation = False } (Decode.succeed NoOp)
         , Html.Attributes.style [ ( "position", "relative" ) ]
         ]
         [ Html.div [ class "dashboard__widget-title" ] [ Html.text chart.title ]
         , Lines.viewCustom
-            { margin = Coordinate.Margin 10 90 30 90
+            { margin = Coordinate.Margin 10 120 30 30
             , attributes = []
             , grid = Grid.lines 1 Color.grayLight
-            , area = Area.stacked 0.3
+            , area = Area.stacked 0.2
             , events =
                 Events.custom
                     [ Events.onMouseDown StartDragging Events.getData
@@ -452,19 +543,26 @@ viewChart model chart =
             , x =
                 { title = Title.default (Maybe.withDefault "" chart.xLabel)
                 , variable = Tuple.first >> Just
-                , pixels = cellSize * 6
-                , range = Range.custom (\dataRange -> ( dataRange.min, dataRange.max + toFloat chart.bucketSize ))
+                , pixels = cellSize * 6 + gapSize * (6 - 1) - widgetPadding * 2
+                , range =
+                    Range.custom
+                        (\dataRange ->
+                            ( dataRange.min
+                            , dataRange.max
+                              --+ toFloat chart.bucketSize
+                            )
+                        )
                 , axis = Axis.time 10
                 }
             , y =
                 { title = Title.default (Maybe.withDefault "" chart.yLabel)
                 , variable = Tuple.second
-                , pixels = cellSize * 2
+                , pixels = cellSize * 3 + gapSize * (3 - 1) - headerHeight - widgetPadding * 2
                 , range = Range.default
                 , axis = Axis.time 10
                 }
             , intersection = Intersection.default
-            , junk = theJunk model chart chart.id
+            , junk = theJunk model chart chart.id chart.series
             , interpolation = Lines.steppedAfter
             , legends = Legends.default
             , line = Line.default

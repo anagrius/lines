@@ -1,59 +1,66 @@
-module Internal.Line exposing
-  ( Line(..), Config, lineConfig, line, dash
-  , Look, default, wider, static, emphasizable
-  , Style, style
-  , view, viewSample
-  )
+module Internal.Line
+    exposing
+        ( Config
+        , Line(..)
+        , Look
+        , Style
+        , dash
+        , default
+        , emphasizable
+        , line
+        , lineConfig
+        , static
+        , style
+        , view
+        , viewSample
+        , wider
+        )
 
-{-|
+{-| -}
 
-
--}
-
-import Svg
-import Svg.Attributes as Attributes
-import Lines.Color as Color
-import Lines.Junk as Junk
 import Internal.Area as Area
-import Internal.Coordinate as Coordinate exposing (DataPoint, Data, Point)
+import Internal.Coordinate as Coordinate exposing (Data, DataPoint, Point)
 import Internal.Dot as Dot
 import Internal.Interpolation as Interpolation
 import Internal.Path as Path
 import Internal.Utils as Utils
-
+import Lines.Color as Color
+import Lines.Junk as Junk
+import Svg
+import Svg.Attributes as Attributes
 
 
 {-| -}
-type Line data =
-  Line (Config data)
+type Line data
+    = Line (Config data)
 
 
 {-| -}
 type alias Config data =
-  { color : Color.Color
-  , shape : Dot.Shape
-  , dashing : List Float
-  , label : String
-  , data : List data
-  }
+    { color : Color.Color
+    , shape : Dot.Shape
+    , dashing : List Float
+    , label : String
+    , data : List data
+    }
 
 
 {-| -}
 lineConfig : Line data -> Config data
 lineConfig (Line line) =
-  line
+    line
 
 
 {-| -}
 line : Color.Color -> Dot.Shape -> String -> List data -> Line data
 line color shape label data =
-  Line <| Config color shape [] label data
+    Line <| Config color shape [] label data
 
 
 {-| -}
 dash : Color.Color -> Dot.Shape -> String -> List Float -> List data -> Line data
 dash color shape label dashing data =
-  Line <| Config color shape dashing label data
+    Line <| Config color shape dashing label data
 
 
 
@@ -61,53 +68,53 @@ dash color shape label dashing data =
 
 
 {-| -}
-type Look data =
-  Look
-    { normal : Style
-    , emphasized : Style
-    , isEmphasized : List data -> Bool
-    }
+type Look data
+    = Look
+        { normal : Style
+        , emphasized : Style
+        , isEmphasized : List data -> Bool
+        }
 
 
 {-| -}
 default : Look data
 default =
-  Look
-    { normal = style 1 identity
-    , emphasized = style 2 identity
-    , isEmphasized = always False
-    }
+    Look
+        { normal = style 1 identity
+        , emphasized = style 2 identity
+        , isEmphasized = always False
+        }
 
 
 {-| -}
 wider : Float -> Look data
 wider width =
-  Look
-    { normal = style width identity
-    , emphasized = style width identity
-    , isEmphasized = always False
-    }
+    Look
+        { normal = style width identity
+        , emphasized = style width identity
+        , isEmphasized = always False
+        }
 
 
 {-| -}
 static : Style -> Look data
 static normal =
-  Look
-    { normal = normal
-    , emphasized = normal
-    , isEmphasized = always False
-    }
+    Look
+        { normal = normal
+        , emphasized = normal
+        , isEmphasized = always False
+        }
 
 
 {-| -}
 emphasizable :
-  { normal : Style
-  , emphasized : Style
-  , isEmphasized : List data -> Bool
-  }
-  -> Look data
+    { normal : Style
+    , emphasized : Style
+    , isEmphasized : List data -> Bool
+    }
+    -> Look data
 emphasizable =
-  Look
+    Look
 
 
 
@@ -115,17 +122,17 @@ emphasizable =
 
 
 {-| -}
-type Style =
-  Style
-    { width : Float
-    , color : Color.Color -> Color.Color
-    }
+type Style
+    = Style
+        { width : Float
+        , color : Color.Color -> Color.Color
+        }
 
 
 {-| -}
 style : Float -> (Color.Color -> Color.Color) -> Style
 style width color =
-  Style { width = width, color = color }
+    Style { width = width, color = color }
 
 
 
@@ -133,94 +140,104 @@ style width color =
 
 
 type alias Arguments data =
-  { system : Coordinate.System
-  , dotLook : Dot.Look data
-  , interpolation : Interpolation.Interpolation
-  , lineLook : Look data
-  , area : Area.Area
-  , id : String
-  }
+    { system : Coordinate.System
+    , dotLook : Dot.Look data
+    , interpolation : Interpolation.Interpolation
+    , lineLook : Look data
+    , area : Area.Area
+    , id : String
+    }
 
 
 {-| -}
 view : Arguments data -> List (Line data) -> List (Data data) -> Svg.Svg msg
 view arguments lines datas =
-  let
-    container =
-      Svg.g [ Attributes.class "chart__lines" ]
+    let
+        container =
+            Svg.g [ Attributes.class "chart__lines" ]
 
-    buildLineViews =
-      if Area.opacityContainer arguments.area < 1
-        then viewStacked arguments.area
-        else viewNormal
-  in
-  List.map2 (viewSingle arguments) lines datas
-    |> Utils.unzip3
-    |> buildLineViews
-    |> container
+        buildLineViews =
+            if Area.opacityContainer arguments.area < 1 then
+                viewStacked arguments.area
+            else
+                viewNormal
+    in
+    List.map2 (viewSingle arguments) lines datas
+        |> Utils.unzip3
+        |> buildLineViews
+        |> container
 
 
 viewNormal : ( List (Svg.Svg msg), List (Svg.Svg msg), List (Svg.Svg msg) ) -> List (Svg.Svg msg)
 viewNormal ( areas, lines, dots ) =
-  let
-    view area line dots =
-      Svg.g [ Attributes.class "chart__line" ] [ area, line, dots ]
-  in
-  List.map3 view areas lines dots
+    let
+        view area line dots =
+            Svg.g [ Attributes.class "chart__line" ] [ area, line, dots ]
+    in
+    List.map3 view areas lines dots
 
 
-viewStacked : Area.Area ->  ( List (Svg.Svg msg), List (Svg.Svg msg), List (Svg.Svg msg) ) -> List (Svg.Svg msg)
+viewStacked : Area.Area -> ( List (Svg.Svg msg), List (Svg.Svg msg), List (Svg.Svg msg) ) -> List (Svg.Svg msg)
 viewStacked area ( areas, lines, dots ) =
-  let opacity = "opacity: " ++ toString (Area.opacityContainer area)
-      toList l d = [ l, d ]
-      bottoms = List.concat <| List.map2 toList lines dots
-  in
-  [ Svg.g [ Attributes.class "chart__bottoms", Attributes.style opacity ] areas
-  , Svg.g [ Attributes.class "chart__tops" ] bottoms
-  ]
+    let
+        opacity =
+            "opacity: " ++ toString (Area.opacityContainer area)
+
+        toList l d =
+            [ l, d ]
+
+        bottoms =
+            List.concat <| List.map2 toList lines dots
+    in
+    [ Svg.g [ Attributes.class "chart__bottoms", Attributes.style opacity ] areas
+    , Svg.g [ Attributes.class "chart__tops" ] bottoms
+    ]
 
 
 viewSingle : Arguments data -> Line data -> Data data -> ( Svg.Svg msg, Svg.Svg msg, Svg.Svg msg )
 viewSingle ({ system } as arguments) (Line lineConfig) dataPoints =
-  let
-    parts =
-      Utils.part dataPoints [] []
+    let
+        parts : List (List (DataPoint data))
+        parts =
+            Utils.part dataPoints [] []
 
-    -- Dots
-    viewDots =
-      parts
-        |> List.concat
-        |> List.filter (Coordinate.isWithinRange system << .point)
-        |> List.map viewDot
-        |> Svg.g [ Attributes.class "chart__dots" ]
+        -- Dots
+        viewDots =
+            parts
+                |> List.concat
+                |> List.filter (Coordinate.isWithinRange system << .point)
+                |> List.map viewDot
+                |> Svg.g [ Attributes.class "chart__dots" ]
 
-    viewDot =
-      Dot.view
-        { system = arguments.system
-        , dotLook = arguments.dotLook
-        , shape = lineConfig.shape
-        , color = lineConfig.color
-        }
+        viewDot =
+            Dot.view
+                { system = arguments.system
+                , dotLook = arguments.dotLook
+                , shape = lineConfig.shape
+                , color = lineConfig.color
+                }
 
-    -- Interpolations
-    commands =
-      Interpolation.toCommands arguments.interpolation <|
-        List.map (List.map .point) parts
+        -- Interpolations
+        commands =
+            Interpolation.toCommands arguments.interpolation <|
+                List.map (List.map .point) parts
 
-    viewAreas () =
-      Svg.g
-        [ Attributes.class "chart__interpolation__area" ] <|
-        List.map2 (viewArea arguments lineConfig) commands parts
+        viewAreas () =
+            Svg.g
+                [ Attributes.class "chart__interpolation__area" ]
+            <|
+                List.map2 (viewArea arguments lineConfig) commands parts
 
-    viewLines =
-      Svg.g
-        [ Attributes.class "chart__interpolation__line" ] <|
-        List.map2 (viewLine arguments lineConfig) commands parts
-  in
-  ( Utils.viewIf (Area.hasArea arguments.area) viewAreas
-  , viewLines
-  , viewDots
-  )
+        viewLines =
+            Svg.g
+                [ Attributes.class "chart__interpolation__line" ]
+            <|
+                List.map2 (viewLine arguments lineConfig) commands parts
+    in
+    ( Utils.viewIf (Area.hasArea arguments.area) viewAreas
+    , viewLines
+    , viewDots
+    )
 
 
 
@@ -229,33 +246,36 @@ viewSingle ({ system } as arguments) (Line lineConfig) dataPoints =
 
 viewLine : Arguments data -> Config data -> List Path.Command -> List (DataPoint data) -> Svg.Svg msg
 viewLine { system, lineLook, id } lineConfig interpolation dataPoints =
-  let
-    lineAttributes =
-      Junk.withinChartArea system :: toLineAttributes lineLook lineConfig dataPoints
-  in
-  Utils.viewWithFirst dataPoints <| \first rest ->
-    Path.view system lineAttributes <|
-      Path.Move first.point :: interpolation
+    let
+        lineAttributes =
+            Junk.withinChartArea system :: toLineAttributes lineLook lineConfig dataPoints
+    in
+    Utils.viewWithFirst dataPoints <|
+        \first rest ->
+            Path.view system lineAttributes <|
+                Path.Move first.point
+                    :: interpolation
 
 
 toLineAttributes : Look data -> Config data -> List (DataPoint data) -> List (Svg.Attribute msg)
 toLineAttributes (Look look) { color, dashing } dataPoints =
-  let
-    isEmphasized =
-      look.isEmphasized (List.map .data dataPoints)
+    let
+        isEmphasized =
+            look.isEmphasized (List.map .data dataPoints)
 
-    (Style style) =
-      if isEmphasized
-        then look.emphasized
-        else look.normal
-  in
-  [ Attributes.style "pointer-events: none;"
-  , Attributes.class "chart__interpolation__line__fragment"
-  , Attributes.stroke (style.color color)
-  , Attributes.strokeWidth (toString style.width)
-  , Attributes.strokeDasharray <| String.join " " (List.map toString dashing)
-  , Attributes.fill "transparent"
-  ]
+        (Style style) =
+            if isEmphasized then
+                look.emphasized
+            else
+                look.normal
+    in
+    [ Attributes.style "pointer-events: none;"
+    , Attributes.class "chart__interpolation__line__fragment"
+    , Attributes.stroke (style.color color)
+    , Attributes.strokeWidth (toString style.width)
+    , Attributes.strokeDasharray <| String.join " " (List.map toString dashing)
+    , Attributes.fill "transparent"
+    ]
 
 
 
@@ -264,36 +284,38 @@ toLineAttributes (Look look) { color, dashing } dataPoints =
 
 viewArea : Arguments data -> Config data -> List Path.Command -> List (DataPoint data) -> Svg.Svg msg
 viewArea { system, lineLook, area, id } lineConfig interpolation dataPoints =
-  let
-    ground dataPoint =
-      Point dataPoint.point.x (Utils.towardsZero system.y)
+    let
+        ground dataPoint =
+            Point dataPoint.point.x (Utils.towardsZero system.y)
 
-    attributes =
-      Junk.withinChartArea system
-        :: Attributes.fillOpacity (toString (Area.opacitySingle area))
-        :: toAreaAttributes lineLook lineConfig area dataPoints
-  in
-  Utils.viewWithEdges dataPoints <| \first rest last ->
-    Path.view system attributes <|
-      [ Path.Move (ground first), Path.Line first.point ]
-      ++ interpolation ++
-      [ Path.Line (ground last) ]
+        attributes =
+            Junk.withinChartArea system
+                :: Attributes.fillOpacity (toString (Area.opacitySingle area))
+                :: toAreaAttributes lineLook lineConfig area dataPoints
+    in
+    Utils.viewWithEdges dataPoints <|
+        \first rest last ->
+            Path.view system attributes <|
+                [ Path.Move (ground first), Path.Line first.point ]
+                    ++ interpolation
+                    ++ [ Path.Line (ground last) ]
 
 
 toAreaAttributes : Look data -> Config data -> Area.Area -> List (DataPoint data) -> List (Svg.Attribute msg)
 toAreaAttributes (Look look) { color } area dataPoints =
-  let
-    isEmphasized =
-      look.isEmphasized (List.map .data dataPoints)
+    let
+        isEmphasized =
+            look.isEmphasized (List.map .data dataPoints)
 
-    (Style style) =
-      if isEmphasized
-        then look.emphasized
-        else look.normal
-  in
-  [ Attributes.class "chart__interpolation__area__fragment"
-  , Attributes.fill (style.color color)
-  ]
+        (Style style) =
+            if isEmphasized then
+                look.emphasized
+            else
+                look.normal
+    in
+    [ Attributes.class "chart__interpolation__area__fragment"
+    , Attributes.fill (style.color color)
+    ]
 
 
 
@@ -303,32 +325,32 @@ toAreaAttributes (Look look) { color } area dataPoints =
 {-| -}
 viewSample : Look data -> Config data -> Area.Area -> Float -> Svg.Svg msg
 viewSample look lineConfig area sampleWidth =
-  let
-    lineAttributes =
-      toLineAttributes look lineConfig []
+    let
+        lineAttributes =
+            toLineAttributes look lineConfig []
 
-    sizeAttributes =
-      [ Attributes.x1 "0"
-      , Attributes.y1 "0"
-      , Attributes.x2 <| toString sampleWidth
-      , Attributes.y2 "0"
-      ]
+        sizeAttributes =
+            [ Attributes.x1 "0"
+            , Attributes.y1 "0"
+            , Attributes.x2 <| toString sampleWidth
+            , Attributes.y2 "0"
+            ]
 
-    areaAttributes =
-      Attributes.fillOpacity (toString (Area.opacity area))
-       :: toAreaAttributes look lineConfig area []
+        areaAttributes =
+            Attributes.fillOpacity (toString (Area.opacity area))
+                :: toAreaAttributes look lineConfig area []
 
-    rectangleAttributes =
-      [ Attributes.x "0"
-      , Attributes.y "0"
-      , Attributes.height "9"
-      , Attributes.width <| toString sampleWidth
-      ]
+        rectangleAttributes =
+            [ Attributes.x "0"
+            , Attributes.y "0"
+            , Attributes.height "9"
+            , Attributes.width <| toString sampleWidth
+            ]
 
-    viewRectangle () =
-      Svg.rect (areaAttributes ++ rectangleAttributes) []
-  in
-  Svg.g []
-    [ Svg.line (lineAttributes ++ sizeAttributes) []
-    , Utils.viewIf (Area.hasArea area) viewRectangle
-    ]
+        viewRectangle () =
+            Svg.rect (areaAttributes ++ rectangleAttributes) []
+    in
+    Svg.g []
+        [ Svg.line (lineAttributes ++ sizeAttributes) []
+        , Utils.viewIf (Area.hasArea area) viewRectangle
+        ]
