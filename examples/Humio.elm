@@ -352,7 +352,7 @@ chart2 =
     , yLabel = Just "Mean"
     , bucketSize = bucketSize
     , series =
-        [ { title = "@anagrius", ys = [ Just 0, Just 1, Just 0, Just 0, Just 0, Just 1, Just 0, Just 0, Just 0 ] }
+        [ { title = "@anagrius", ys = [ Just 0, Just 1, Just 0, Just 10, Just 10, Just 5, Just 5, Just 0, Just 0 ] }
         , { title = "@meethumio", ys = [ Just 19, Just 0, Just 0, Nothing, Nothing, Just 10, Just 2, Just 16, Just 2 ] }
         , { title = "@therealdonaldtrump", ys = [ Nothing, Just 21, Just 211, Nothing, Just 160, Nothing, Nothing, Just 101, Just 171 ] }
         ]
